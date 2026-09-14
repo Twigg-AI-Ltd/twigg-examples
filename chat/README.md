@@ -15,10 +15,10 @@ Download a file and run it. It asks for your key.
 
 ```bash
 # JavaScript (Node 20.12 or newer)
-curl -O https://raw.githubusercontent.com/Twigg-AI-Ltd/twigg-examples/v1/chat/twigg-chat.mjs && node twigg-chat.mjs
+curl -O https://raw.githubusercontent.com/Twigg-AI-Ltd/twigg-examples/v2/chat/twigg-chat.mjs && node twigg-chat.mjs
 
 # Python (3.8 or newer)
-curl -O https://raw.githubusercontent.com/Twigg-AI-Ltd/twigg-examples/v1/chat/twigg-chat.py && python3 twigg-chat.py
+curl -O https://raw.githubusercontent.com/Twigg-AI-Ltd/twigg-examples/v2/chat/twigg-chat.py && python3 twigg-chat.py
 ```
 
 Or clone the repo and run it from this folder:
