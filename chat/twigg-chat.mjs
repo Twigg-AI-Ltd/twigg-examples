@@ -11,6 +11,7 @@
 //   /new           start a fresh chat
 //   /list          list this user's chats
 //   /open <n>      reopen chat <n> from the last /list and show its history
+//   /model [n]     list the models, or switch to model <n> from that list
 import { createInterface } from "node:readline/promises";
 
 try {
@@ -18,13 +19,14 @@ try {
 } catch {}
 
 const API = `${process.env.TWIGG_BASE_URL ?? "https://api.twigg.ai"}/api/v1`;
-const MODEL = process.env.TWIGG_MODEL ?? "gpt-5-6-luna";
+let model = process.env.TWIGG_MODEL ?? "gpt-5-6-luna"; // named on every message, so it can change mid-chat
 const cli = createInterface({ input: process.stdin, output: process.stdout });
 const key = process.env.TWIGG_API_KEY || (await cli.question("Twigg API key: "));
 
 let user = "guest";
 let chat = null; // the open chat's id: the only state this app holds
 let listed = [];
+let models = [];
 
 async function twigg(path, body) {
   const res = await fetch(API + path, {
@@ -40,7 +42,7 @@ async function twigg(path, body) {
 async function send(text) {
   const namespace = `twigg-demo/${user}`;
   chat ??= (await (await twigg("/chats", { namespace, title: [...text].slice(0, 50).join("") })).json()).id;
-  const res = await twigg(`/chats/${chat}/responses`, { model: MODEL, input: [{ type: "prompt", text }] });
+  const res = await twigg(`/chats/${chat}/responses`, { model, input: [{ type: "prompt", text }] });
   let buffer = "", event = "";
   for await (const chunk of res.body.pipeThrough(new TextDecoderStream())) {
     const lines = (buffer + chunk).split("\n");
@@ -76,10 +78,19 @@ const commands = {
       if (part.type === "prompt" || part.type === "message") console.log(`${role === "user" ? "you" : "bot"}: ${part.text}\n`);
     }
   },
+  async model(n) {
+    if (n === undefined) {
+      models = await (await twigg("/models")).json();
+      return models.forEach((m, i) => console.log(`${i + 1}. ${m.name}  ${m.provider_label}${m.name === model ? "  (current)" : ""}`));
+    }
+    if (!models[n - 1]) return console.log("Run /model, then /model <n>");
+    model = models[n - 1].name;
+    console.log(`Using ${model}`);
+  },
 };
 
 cli.on("close", () => process.exit());
-console.log("Type a message, or /user <name>, /new, /list, /open <n>.");
+console.log("Type a message, or /user <name>, /new, /list, /open <n>, /model [n].");
 while (true) {
   const line = (await cli.question(`${user}> `)).trim();
   if (!line) continue;
@@ -87,7 +98,7 @@ while (true) {
     const [command, arg] = line.split(/\s+/);
     if (!line.startsWith("/")) await send(line);
     else if (commands[command.slice(1)]) await commands[command.slice(1)](arg);
-    else console.log("Commands: /user <name>, /new, /list, /open <n>");
+    else console.log("Commands: /user <name>, /new, /list, /open <n>, /model [n]");
   } catch (err) {
     console.error(err.message);
   }

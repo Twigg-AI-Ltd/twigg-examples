@@ -6,6 +6,11 @@ import { createServer } from "node:http";
 
 const KEY = "test-key";
 const NAMESPACE = /^[a-z0-9_-]{1,64}(\/[a-z0-9_-]{1,64})*$/;
+const MODELS = [
+  { name: "gpt-5-6-luna", display_name: "GPT-5.6 Luna", provider_label: "OpenAI" },
+  { name: "claude-opus-5", display_name: "Claude Opus 5", provider_label: "Anthropic" },
+  { name: "grok-4-6", display_name: "Grok 4.6", provider_label: "xAI" },
+];
 const chats = [];
 
 createServer(async (req, res) => {
@@ -18,6 +23,9 @@ createServer(async (req, res) => {
   };
   const fail = (status, message) => json(status, { error: { code: String(status), message } });
   if (req.headers.authorization !== `Bearer ${KEY}`) return fail(401, "bad key");
+
+  // A bare array, like the real endpoint: no page object around it.
+  if (req.method === "GET" && pathname === "/api/v1/models") return json(200, MODELS);
 
   if (req.method === "POST" && pathname === "/api/v1/chats") {
     const { namespace, title } = JSON.parse(body);
@@ -37,8 +45,10 @@ createServer(async (req, res) => {
 
   if (req.method === "POST" && pathname.endsWith("/responses")) {
     const { model, input } = JSON.parse(body);
-    if (!model || input?.[0]?.type !== "prompt") return fail(422, "bad response request");
-    const reply = `Heard (${chat.parts.length / 2 + 1}): ${input[0].text} ✓`;
+    if (input?.[0]?.type !== "prompt") return fail(422, "bad response request");
+    if (!MODELS.some((m) => m.name === model)) return fail(404, `unknown model ${model}`);
+    // The reply names the model, so a switch mid-chat shows up in the transcript.
+    const reply = `Heard (${chat.parts.length / 2 + 1}) on ${model}: ${input[0].text} ✓`;
     chat.parts.push({ role: "user", part: { type: "prompt", text: input[0].text } });
     chat.parts.push({ role: "assistant", part: { type: "message", text: reply } });
     const event = (name, data, eol = "\n") => `event: ${name}${eol}data: ${JSON.stringify(data)}${eol}${eol}`;

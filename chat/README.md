@@ -40,15 +40,28 @@ Your first message starts a new chat, and later messages continue it.
 | `/new`         | Start a fresh chat as the current user.                        |
 | `/list`        | List the current user's chats, newest first.                   |
 | `/open <n>`    | Reopen chat `n` from the last `/list` and print its history.   |
+| `/model`       | List the models you can use, marking the current one.          |
+| `/model <n>`   | Switch to model `n` from that list, from your next message on. |
 
 Quit with Ctrl+D or Ctrl+C.
 
 A session looks like this (replies shortened):
 
 ```
-Type a message, or /user <name>, /new, /list, /open <n>.
+Type a message, or /user <name>, /new, /list, /open <n>, /model [n].
 guest> What's a good name for a cat?
 How about Miso? Short, friendly, and easy to call across a room.
+
+guest> /model
+1. claude-fable-5-1  Anthropic
+2. claude-opus-5  Anthropic
+3. claude-sonnet-5  Anthropic
+4. gpt-5-6-luna  OpenAI  (current)
+...
+guest> /model 3
+Using claude-sonnet-5
+guest> Any more ideas?
+Pepper, Biscuit or Tofu, if you like the food theme Miso started.
 
 guest> /user alice
 alice> Plan a weekend in Lisbon
@@ -82,6 +95,7 @@ else is a call to Twigg.
 | Every message         | `POST /api/v1/chats/{chat_id}/responses` | Sends only the new text and the model. The reply streams back.               |
 | `/list`               | `GET /api/v1/chats?namespace=...`        | Lists every chat under that user's namespace.                                |
 | `/open <n>`           | `GET /api/v1/chats/{chat_id}/history`    | Reads the conversation back.                                                 |
+| `/model`              | `GET /api/v1/models`                     | Lists every model in the catalogue you can name on a message.               |
 
 **Users are namespaces.** Each user's chats are created under
 `twigg-demo/<user>`, so there is no users table. A user exists as soon as they
@@ -99,8 +113,10 @@ of `event:` and `data:` lines. The app prints the text of each `delta` event
 whose `kind` is `text` and skips the rest, such as reasoning. The stream ends
 with a `done` event carrying usage and cost.
 
-**The model is a per-request choice.** Every message names a model, so you can
-change `TWIGG_MODEL` and carry on in an existing chat on a different model.
+**The model is a per-request choice.** Every message names a model, and the
+chat doesn't belong to any one of them. Use `/model` to switch mid-chat: the
+next message goes to the new model, with the whole conversation so far, even if
+it comes from a different provider.
 
 **A namespace is not a security boundary.** `/user` lets anyone at the keyboard
 read any user's chats, which is fine for a demo. Your API key gives access to
@@ -115,7 +131,7 @@ from (see `.env.example`). Variables already set in your shell win over `.env`.
 | Variable         | Default                 | Meaning                                                                             |
 | ---------------- | ----------------------- | ----------------------------------------------------------------------------------- |
 | `TWIGG_API_KEY`  | asks when you start     | Your API key.                                                                       |
-| `TWIGG_MODEL`    | `gpt-5-6-luna`          | Any `name` from the [model catalogue](https://api.twigg.ai/v1/catalogue/models.md). |
+| `TWIGG_MODEL`    | `gpt-5-6-luna`          | The model to start on. Any `name` from the [model catalogue](https://api.twigg.ai/v1/catalogue/models.md). |
 | `TWIGG_BASE_URL` | `https://api.twigg.ai`  | Only change this if you were given a different API address.                         |
 
 Each message is billed from your prepaid credit at the model's rates. The

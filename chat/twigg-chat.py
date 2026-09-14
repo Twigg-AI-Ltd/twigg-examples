@@ -11,6 +11,7 @@
 #   /new           start a fresh chat
 #   /list          list this user's chats
 #   /open <n>      reopen chat <n> from the last /list and show its history
+#   /model [n]     list the models, or switch to model <n> from that list
 import json, os, sys, urllib.error, urllib.parse, urllib.request
 
 # ./.env, if there is one; variables already set win
@@ -21,12 +22,13 @@ if os.path.exists(".env"):
             os.environ.setdefault(name.strip(), value.strip().strip("\"'"))
 
 API = os.environ.get("TWIGG_BASE_URL", "https://api.twigg.ai") + "/api/v1"
-MODEL = os.environ.get("TWIGG_MODEL", "gpt-5-6-luna")
 KEY = os.environ.get("TWIGG_API_KEY") or input("Twigg API key: ")
 
 user = "guest"
 chat = None  # the open chat's id: the only state this app holds
+model = os.environ.get("TWIGG_MODEL", "gpt-5-6-luna")  # named on every message, so it can change mid-chat
 listed = []
+models = []
 
 
 def twigg(path, body=None):
@@ -47,7 +49,7 @@ def send(text):
     if chat is None:
         chat = json.load(twigg("/chats", {"namespace": f"twigg-demo/{user}", "title": text[:50]}))["id"]
     event = ""
-    for line in twigg(f"/chats/{chat}/responses", {"model": MODEL, "input": [{"type": "prompt", "text": text}]}):
+    for line in twigg(f"/chats/{chat}/responses", {"model": model, "input": [{"type": "prompt", "text": text}]}):
         line = line.decode().strip()
         if line.startswith("event:"):
             event = line[6:].strip()
@@ -61,7 +63,7 @@ def send(text):
     print("\n")
 
 
-print("Type a message, or /user <name>, /new, /list, /open <n>.")
+print("Type a message, or /user <name>, /new, /list, /open <n>, /model [n].")
 while True:
     try:
         line = input(f"{user}> ").strip()
@@ -90,7 +92,17 @@ while True:
             for p in json.load(twigg(f"/chats/{chat}/history?limit=100"))["data"]:
                 if p["part"]["type"] in ("prompt", "message"):
                     print(f"{'you' if p['role'] == 'user' else 'bot'}: {p['part']['text']}\n")
+        elif command == "/model" and not arg:
+            models = json.load(twigg("/models"))
+            for i, m in enumerate(models, 1):
+                print(f"{i}. {m['name']}  {m['provider_label']}{'  (current)' if m['name'] == model else ''}")
+        elif command == "/model":
+            if not (arg.isdigit() and 0 < int(arg) <= len(models)):
+                print("Run /model, then /model <n>")
+                continue
+            model = models[int(arg) - 1]["name"]
+            print(f"Using {model}")
         else:
-            print("Commands: /user <name>, /new, /list, /open <n>")
+            print("Commands: /user <name>, /new, /list, /open <n>, /model [n]")
     except Exception as err:
         print(err, file=sys.stderr)

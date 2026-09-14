@@ -10,6 +10,7 @@
 //	/new           start a fresh chat
 //	/list          list this user's chats
 //	/open <n>      reopen chat <n> from the last /list and show its history
+//	/model [n]     list the models, or switch to model <n> from that list
 package main
 
 import (
@@ -33,12 +34,19 @@ type chatSummary struct {
 	UpdatedAt string `json:"updated_at"`
 }
 
+type modelSummary struct {
+	Name          string
+	ProviderLabel string `json:"provider_label"`
+}
+
 var (
-	api, model, key string
-	user            = "guest"
-	chat            string // the open chat's id: the only state this app holds
-	listed          []chatSummary
-	stdin           = bufio.NewScanner(os.Stdin)
+	api, key string
+	model    string // named on every message, so it can change mid-chat
+	user     = "guest"
+	chat     string // the open chat's id: the only state this app holds
+	listed   []chatSummary
+	models   []modelSummary
+	stdin    = bufio.NewScanner(os.Stdin)
 )
 
 func main() {
@@ -48,7 +56,7 @@ func main() {
 	if key = os.Getenv("TWIGG_API_KEY"); key == "" {
 		key, _ = prompt("Twigg API key: ")
 	}
-	fmt.Println("Type a message, or /user <name>, /new, /list, /open <n>.")
+	fmt.Println("Type a message, or /user <name>, /new, /list, /open <n>, /model [n].")
 	for {
 		line, ok := prompt(user + "> ")
 		if !ok {
@@ -105,8 +113,27 @@ func run(line string) error {
 				fmt.Printf("%s: %s\n\n", who, p.Part.Text)
 			}
 		}
+	case command == "/model" && arg == "":
+		if _, err := twigg("/models", nil, &models); err != nil {
+			return err
+		}
+		for i, m := range models {
+			current := ""
+			if m.Name == model {
+				current = "  (current)"
+			}
+			fmt.Printf("%d. %s  %s%s\n", i+1, m.Name, m.ProviderLabel, current)
+		}
+	case command == "/model":
+		n, _ := strconv.Atoi(arg)
+		if n < 1 || n > len(models) {
+			fmt.Println("Run /model, then /model <n>")
+			return nil
+		}
+		model = models[n-1].Name
+		fmt.Printf("Using %s\n", model)
 	default:
-		fmt.Println("Commands: /user <name>, /new, /list, /open <n>")
+		fmt.Println("Commands: /user <name>, /new, /list, /open <n>, /model [n]")
 	}
 	return nil
 }

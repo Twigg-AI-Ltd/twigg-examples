@@ -10,6 +10,7 @@
 //!   /new           start a fresh chat
 //!   /list          list this user's chats
 //!   /open <n>      reopen chat <n> from the last /list and show its history
+//!   /model [n]     list the models, or switch to model <n> from that list
 use serde_json::{Value, json};
 use std::collections::HashMap;
 use std::io::{self, BufRead, BufReader, Write};
@@ -19,11 +20,12 @@ type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 struct App {
     agent: ureq::Agent,
     api: String,
-    model: String,
+    model: String, // named on every message, so it can change mid-chat
     key: String,
     user: String,
     chat: Option<String>, // the open chat's id: the only state this app holds
     listed: Vec<Value>,
+    models: Vec<Value>,
 }
 
 fn main() {
@@ -45,8 +47,9 @@ fn main() {
         user: "guest".into(),
         chat: None,
         listed: vec![],
+        models: vec![],
     };
-    println!("Type a message, or /user <name>, /new, /list, /open <n>.");
+    println!("Type a message, or /user <name>, /new, /list, /open <n>, /model [n].");
     while let Some(line) = prompt(&format!("{}> ", app.user)) {
         if let Err(err) = app.run(&line) {
             eprintln!("{err}");
@@ -91,7 +94,24 @@ impl App {
                     }
                 }
             }
-            _ => println!("Commands: /user <name>, /new, /list, /open <n>"),
+            "/model" if arg.is_empty() => {
+                self.models = self.json("/models", None)?.as_array().cloned().unwrap_or_default();
+                for (i, m) in self.models.iter().enumerate() {
+                    let current = if m["name"] == self.model.as_str() { "  (current)" } else { "" };
+                    let (name, provider) = (m["name"].as_str().unwrap_or_default(), m["provider_label"].as_str().unwrap_or_default());
+                    println!("{}. {name}  {provider}{current}", i + 1);
+                }
+            }
+            "/model" => {
+                let picked = arg.parse::<usize>().ok().and_then(|n| self.models.get(n.checked_sub(1)?));
+                let Some(name) = picked.and_then(|m| m["name"].as_str()).map(String::from) else {
+                    println!("Run /model, then /model <n>");
+                    return Ok(());
+                };
+                println!("Using {name}");
+                self.model = name;
+            }
+            _ => println!("Commands: /user <name>, /new, /list, /open <n>, /model [n]"),
         }
         Ok(())
     }

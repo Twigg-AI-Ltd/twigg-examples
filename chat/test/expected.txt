@@ -1,29 +1,44 @@
-Type a message, or /user <name>, /new, /list, /open <n>.
-guest> Heard (1): hello there ✓
+Type a message, or /user <name>, /new, /list, /open <n>, /model [n].
+guest> Heard (1) on gpt-5-6-luna: hello there ✓
 
-guest> guest> Heard (1): tell me something long enough that the title has to be cut short 🌿🌿 ✓
+guest> guest> Heard (1) on gpt-5-6-luna: tell me something long enough that the title has to be cut short 🌿🌿 ✓
 
 guest> 1. tell me something long enough that the title has t  (2026-09-14T10:00)
 2. hello there  (2026-09-14T10:00)
 guest> bob> Run /list, then /open <n>
-bob> Heard (1): hi from bob ✓
+bob> Heard (1) on gpt-5-6-luna: hi from bob ✓
 
 bob> 1. hi from bob  (2026-09-14T10:00)
 bob> guest> 1. tell me something long enough that the title has t  (2026-09-14T10:00)
 2. hello there  (2026-09-14T10:00)
 guest> you: hello there
 
-bot: Heard (1): hello there ✓
+bot: Heard (1) on gpt-5-6-luna: hello there ✓
 
-guest> Heard (2): and a follow-up ✓
+guest> Heard (2) on gpt-5-6-luna: and a follow-up ✓
 
+guest> Run /model, then /model <n>
+guest> 1. gpt-5-6-luna  OpenAI  (current)
+2. claude-opus-5  Anthropic
+3. grok-4-6  xAI
+guest> Using claude-opus-5
+guest> Heard (3) on claude-opus-5: same chat, different model ✓
+
+guest> 1. gpt-5-6-luna  OpenAI
+2. claude-opus-5  Anthropic  (current)
+3. grok-4-6  xAI
+guest> Run /model, then /model <n>
 guest> you: hello there
 
-bot: Heard (1): hello there ✓
+bot: Heard (1) on gpt-5-6-luna: hello there ✓
 
 you: and a follow-up
 
-bot: Heard (2): and a follow-up ✓
+bot: Heard (2) on gpt-5-6-luna: and a follow-up ✓
 
-guest> Commands: /user <name>, /new, /list, /open <n>
+you: same chat, different model
+
+bot: Heard (3) on claude-opus-5: same chat, different model ✓
+
+guest> Commands: /user <name>, /new, /list, /open <n>, /model [n]
 guest> 

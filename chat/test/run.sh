@@ -23,6 +23,12 @@ session=(
   "/list"
   "/open 2"
   "and a follow-up"
+  "/model 2"
+  "/model"
+  "/model 2"
+  "same chat, different model"
+  "/model"
+  "/model 9"
   "/open 2"
   "/bogus"
 )
