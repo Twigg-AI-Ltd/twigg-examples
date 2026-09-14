@@ -1,0 +1,29 @@
+Type a message, or /user <name>, /new, /list, /open <n>.
+guest> Heard (1): hello there ✓
+
+guest> guest> Heard (1): tell me something long enough that the title has to be cut short 🌿🌿 ✓
+
+guest> 1. tell me something long enough that the title has t  (2026-09-14T10:00)
+2. hello there  (2026-09-14T10:00)
+guest> bob> Run /list, then /open <n>
+bob> Heard (1): hi from bob ✓
+
+bob> 1. hi from bob  (2026-09-14T10:00)
+bob> guest> 1. tell me something long enough that the title has t  (2026-09-14T10:00)
+2. hello there  (2026-09-14T10:00)
+guest> you: hello there
+
+bot: Heard (1): hello there ✓
+
+guest> Heard (2): and a follow-up ✓
+
+guest> you: hello there
+
+bot: Heard (1): hello there ✓
+
+you: and a follow-up
+
+bot: Heard (2): and a follow-up ✓
+
+guest> Commands: /user <name>, /new, /list, /open <n>
+guest> 
